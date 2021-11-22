@@ -1,7 +1,13 @@
 import sys
 import pygame
 import random
+from tkinter import messagebox as msg
+from tkinter import Tk
 
+# 게임 방법 소개
+root = Tk()
+root.withdraw()
+msg.showinfo('게임 방법', '레이싱게임은 방향키로 하는 게임 입니다!')
 
 # 게임 화면 크기
 WINDOW_WIDTH = 550
@@ -144,7 +150,6 @@ def main():
         # 배경색을 회색으로
         SCREEN.fill(GRAY)
 
-
         # 다른 자동차들 도로위에 움직이기
         for i in range(CAR_COUNT):
             CARS[i].draw_car()
@@ -175,8 +180,6 @@ def main():
                     else:
                         CARS[i].rect.y -= CARS[i].dy
                         CARS[j].rect.y += CARS[j].dy
-
-
 
         pygame.display.flip()
 
