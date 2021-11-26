@@ -1,8 +1,6 @@
 import tkinter
 import tkinter as tk
 
-from Tools.scripts.serve import app
-
 root = tk.Tk()
 root.title("뽀글뽀글 미니게임")
 root.geometry("900x900")
