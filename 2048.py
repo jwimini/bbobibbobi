@@ -1,226 +1,302 @@
-from tkinter import *
-from tkinter import messagebox
+import tkinter as tk
 import random
-from tkinter import messagebox as msg
-from tkinter import Tk
+import os
 
-# 게임 방법 소개
-root = Tk()
-root.withdraw()
-msg.showinfo('게임 방법', '2048은 방향키를 사용하여 하는 게임입니다!')
+# Design parameters, color in Hex
+import pygame
+pygame.init()
+
+GRID_COLOR = "#a6bdbb"
+music = pygame.mixer.Sound('PyRacing/sound/2048.ogg')
+# 배경음악 무한 반복
+music.play(-1)
+
+EMPTY_CELL_COLOR = "#c2b3a9"
+SCORE_LABEL_FONT = ("Verdana", 18)
+SCORE_FONT = ("Helvetica", 24, "bold")
+CELL_COLORS = {
+        2: '#eee4da',
+        4: '#ede0c8',
+        8: '#edc850',
+        16: '#edc53f',
+        32: '#f67c5f',
+        64: '#f65e3b',
+        128: '#edcf72',
+        256: '#edcc61',
+        512: '#f2b179',
+        1024: '#f59563',
+        2048: '#edc22e', 4096: '#249a91'}
+CELL_NUMBER_COLORS = {2: "#695c57", 4: "#695c57", 8: "#ffffff"}
+CELL_NUMBER_FONTS = ("Helvetica", 15, "bold")
 
 
-class Board:
-    bg_color = {
-
-        '2': '#eee4da',
-        '4': '#ede0c8',
-        '8': '#edc850',
-        '16': '#edc53f',
-        '32': '#f67c5f',
-        '64': '#f65e3b',
-        '128': '#edcf72',
-        '256': '#edcc61',
-        '512': '#f2b179',
-        '1024': '#f59563',
-        '2048': '#edc22e',
-    }
-    color = {
-        '2': '#776e65',
-        '4': '#f9f6f2',
-        '8': '#f9f6f2',
-        '16': '#f9f6f2',
-        '32': '#f9f6f2',
-        '64': '#f9f6f2',
-        '128': '#f9f6f2',
-        '256': '#f9f6f2',
-        '512': '#776e65',
-        '1024': '#f9f6f2',
-        '2048': '#f9f6f2',
-    }
-
+class Game(tk.Frame):
     def __init__(self):
-        self.n = 4
-        self.window = Tk()
-        self.window.title('2048')
-        self.gameArea = Frame(self.window, bg='azure3')
-        self.board = []
-        self.gridCell = [[0] * 4 for i in range(4)]
-        self.compress = False
-        self.merge = False
-        self.moved = False
+        # Set main window
+        tk.Frame.__init__(self)
+        self.grid()
+        self.master.title("2048")
+        self.main_grid = tk.Frame(
+            self, bg=GRID_COLOR, bd=3, width=100, height=100
+        )
+        self.main_grid.grid(pady=(100, 0))
+        self.top_value = 2048
+
+        self.grid_size = 4
+
+        self.sw = self.master.winfo_screenwidth()
+        self.sh = self.master.winfo_screenheight()
+
+        self.make_GUI()
+        self.create_button()
+        self.start_game()
+
+        self.master.bind("<Left>", self.left)
+        self.master.bind("<Right>", self.right)
+        self.master.bind("<Up>", self.up)
+        self.master.bind("<Down>", self.down)
+        self.mainloop()
+
+    def make_GUI(self):
+        self.cells = []
+        # Creating the grid
+        for i in range(self.grid_size):
+            row = []
+            for j in range(self.grid_size):
+                cell_frame = tk.Frame(
+                    self.main_grid, bg=EMPTY_CELL_COLOR, width=80,        height=80)
+                cell_frame.grid(row=i, column=j, padx=5, pady=5)
+                cell_number = tk.Label(self.main_grid, bg=EMPTY_CELL_COLOR)
+                cell_number.grid(row=i, column=j)
+                cell_data = {'frame': cell_frame, "number": cell_number}
+                row.append(cell_data)
+            self.cells.append(row)
+
+        w = self.grid_size*91
+        h = (self.grid_size+1)*93
+        x = (self.sw - w)/2
+        y = (self.sh - h)/2
+        self.master.geometry('%dx%d+%d+%d' % (w, h, x, y))
+
+        act_frame = tk.Frame(self)
+        act_frame.place(relx=0.10, rely=0.05, anchor="center",)
+        tk.Label(
+            act_frame,
+            text="2048",
+            font=SCORE_LABEL_FONT,
+        ).grid(row=0)
+
+        self.score = 0
+        self.bstScore = 0
+        if os.path.exists("bestscore.ini"):
+            with open("bestscore.ini", "r") as f:
+                self.bstScore = int(f.read())
+        score_frame = tk.Frame(self)
+        score_frame.place(relx=0.5, y=45, anchor="center")
+        tk.Label(
+            score_frame,
+            text="Score",
+            font=SCORE_LABEL_FONT,
+        ).grid(row=0)
+        self.score_label = tk.Label(score_frame, text=self.score, font=SCORE_FONT)
+        self.score_label.grid(row=1)
+        record_frame = tk.Frame(self)
+        record_frame.place(relx=0.8, y=45, anchor="center")
+        tk.Label(
+            record_frame,
+            text="Record",
+            font=SCORE_LABEL_FONT,
+        ).grid(row=0)
+        self.record_label = tk.Label(record_frame, text= self.bstScore, font=SCORE_FONT)
+        self.record_label.grid(row=2)
+
+
+
+    def create_button(self):
+        button = tk.Button(self, text='New Game', command=lambda: self.new_game())
+        button.place(relx=0.1, rely=0.10, anchor="center")
+
+
+    def new_game(self):
+        self.make_GUI()
+        self.start_game()
+
+
+    def start_game(self):
+        self.matrix = [[0] * self.grid_size for _ in range(self.grid_size)]
+        row = random.randint(0, self.grid_size - 1)
+        col = random.randint(0, self.grid_size - 1)
+        self.matrix[row][col] = 2
+        self.cells[row][col]["frame"].configure(bg=CELL_COLORS[2])
+        self.cells[row][col]["number"].configure(
+            bg=CELL_COLORS[2],
+            fg=CELL_NUMBER_COLORS[2],
+            font=CELL_NUMBER_FONTS,
+            text="2"
+        )
+        while (self.matrix[row][col] != 0):
+            row = random.randint(0, self.grid_size - 1)
+            col = random.randint(0, self.grid_size - 1)
+        self.matrix[row][col] = 2
+        self.cells[row][col]["frame"].configure(bg=CELL_COLORS[2])
+        self.cells[row][col]["number"].configure(
+            bg=CELL_COLORS[2],
+            fg=CELL_NUMBER_COLORS[2],
+            font=CELL_NUMBER_FONTS,
+            text="2"
+        )
         self.score = 0
 
-        for i in range(4):
-            rows = []
-            for j in range(4):
-                l = Label(self.gameArea, text='', bg='azure4',
-                          font=('arial', 22, 'bold'), width=4, height=2)
-                l.grid(row=i, column=j, padx=7, pady=7)
+    def stack(self):
+        new_matrix = [[0] * self.grid_size for _ in range(self.grid_size)]
+        for row in range(self.grid_size):
+            fill_position = 0
+            for col in range(self.grid_size):
+                if self.matrix[row][col] != 0:
+                    new_matrix[row][fill_position] = self.matrix[row][col]
+                    fill_position += 1
+        self.matrix = new_matrix
 
-                rows.append(l)
-            self.board.append(rows)
-        self.gameArea.grid()
+    def combine(self):
+        for row in range(self.grid_size):
+            for col in range(self.grid_size-1):
+                if (self.matrix[row][col] != 0) and (self.matrix[row][col] == self.matrix[row][col + 1]):
+                    self.matrix[row][col] *= 2
+                    self.matrix[row][col + 1] = 0
+                    self.score += self.matrix[row][col]
+                    if self.score > self.bstScore:
+                        self.bstScore = self.score
+                        with open("bestscore.ini", "w") as f:
+                            f.write(str(self.bstScore))
 
     def reverse(self):
-        for ind in range(4):
-            i = 0
-            j = 3
-            while (i < j):
-                self.gridCell[ind][i], self.gridCell[ind][j] = self.gridCell[ind][j], self.gridCell[ind][i]
-                i += 1
-                j -= 1
+        new_matrix = []
+        for row in range(self.grid_size):
+            new_matrix.append([])
+            for col in range(self.grid_size):
+                new_matrix[row].append(self.matrix[row][(self.grid_size-1) - col])
+        self.matrix = new_matrix
 
     def transpose(self):
-        self.gridCell = [list(t) for t in zip(*self.gridCell)]
+        new_matrix = [[0]*self.grid_size for _ in range(self.grid_size)]
+        for row in range(self.grid_size):
+            for col in range(self.grid_size):
+                new_matrix[row][col] = self.matrix[col][row]
+        self.matrix = new_matrix
 
-    def compressGrid(self):
-        self.compress = False
-        temp = [[0] * 4 for i in range(4)]
-        for i in range(4):
-            cnt = 0
-            for j in range(4):
-                if self.gridCell[i][j] != 0:
-                    temp[i][cnt] = self.gridCell[i][j]
-                    if cnt != j:
-                        self.compress = True
-                    cnt += 1
-        self.gridCell = temp
+    def add_new_tile(self):
+        if any(0 in row for row in self.matrix):
+            row = random.randint(0,self.grid_size-1)
+            col = random.randint(0,self.grid_size-1)
+            while(self.matrix[row][col] != 0):
+                row = random.randint(0,self.grid_size-1)
+                col = random.randint(0,self.grid_size-1)
+            self.matrix[row][col] = random.choice([2, 4])
 
-    def mergeGrid(self):
-        self.merge = False
-        for i in range(4):
-            for j in range(4 - 1):
-                if self.gridCell[i][j] == self.gridCell[i][j + 1] and self.gridCell[i][j] != 0:
-                    self.gridCell[i][j] *= 2
-                    self.gridCell[i][j + 1] = 0
-                    self.score += self.gridCell[i][j]
-                    self.merge = True
+    def update_GUI(self):
+        cell_text_color = 0
+        cell_cell_color = 0
+        for row in range(self.grid_size):
+            for col in range(self.grid_size):
+                cell_value = self.matrix[row][col]
+                if cell_value == 0:
+                    self.cells[row][col]["frame"].configure(bg=EMPTY_CELL_COLOR)
+                    self.cells[row][col]["number"].configure(bg=EMPTY_CELL_COLOR, text="")
+                else:
+                    if cell_value >= 8:
+                        cell_text_color = 8
+                    else:
+                        cell_text_color = cell_value
+                    if cell_value >= 4096:
+                        cell_cell_color = 4096
+                    else:
+                        cell_cell_color = cell_value
 
-    def random_cell(self):
-        cells = []
-        for i in range(4):
-            for j in range(4):
-                if self.gridCell[i][j] == 0:
-                    cells.append((i, j))
-        curr = random.choice(cells)
-        i = curr[0]
-        j = curr[1]
-        self.gridCell[i][j] = 2
+                    self.cells[row][col]["frame"].configure(bg=CELL_COLORS[cell_cell_color])
+                    self.cells[row][col]["number"].configure(
+                        bg=CELL_COLORS[cell_cell_color],
+                        fg=CELL_NUMBER_COLORS[cell_text_color],
+                        font=CELL_NUMBER_FONTS,
+                        text=str(cell_value))
+        self.score_label.configure(text=self.score)
+        self.record_label.configure(text=self.bstScore)
+        self.update_idletasks()
 
-    def can_merge(self):
-        for i in range(4):
-            for j in range(3):
-                if self.gridCell[i][j] == self.gridCell[i][j + 1]:
-                    return True
-
-        for i in range(3):
-            for j in range(4):
-                if self.gridCell[i + 1][j] == self.gridCell[i][j]:
+    def any_move(self):
+        for i in range(self.grid_size):
+            for j in range(self.grid_size-1):
+                if self.matrix[i][j] == self.matrix[i][j + 1] or \
+                   self.matrix[j][i] == self.matrix[j + 1][i] :
                     return True
         return False
 
-    def paintGrid(self):
-        for i in range(4):
-            for j in range(4):
-                if self.gridCell[i][j] == 0:
-                    self.board[i][j].config(text='', bg='azure4')
-                else:
-                    self.board[i][j].config(text=str(self.gridCell[i][j]),
-                                            bg=self.bg_color.get(str(self.gridCell[i][j])),
-                                            fg=self.color.get(str(self.gridCell[i][j])))
+    def game_over(self):
+        # Check if tovalue is reached
+        if any(self.top_value in row for row in self.matrix):
+            text = f"You did {self.top_value}!!"
+            self.popup(text, text + " Cotinue?")
+            self.top_value = self.top_value*2
+        # Check if there are no more moves in the grid
+        elif not any(0 in row for row in self.matrix) and not self.any_move():
+            self.popup("Game Over!!", "Game Over!!")
+
+    def popup (self, win_title, win_message):
+        popup_win = tk.Toplevel()
+        popup_win.wm_title(win_title)
+        w = 200
+        h = 50
+        x = (self.sw - w)/2
+        y = (self.sh - h)/2
+        popup_win.geometry('%dx%d+%d+%d' % (w, h, x, y))
+        l = tk.Label(popup_win, text=win_message)
+        l.grid(row=0, column=0)
+        b = tk.Button(popup_win, text="Ok", command=popup_win.destroy)
+        b.grid(row=1, column=0)
 
 
-class Game:
-    def __init__(self, gamepanel):
-        self.gamepanel = gamepanel
-        self.end = False
-        self.won = False
-
-    def start(self):
-        self.gamepanel.random_cell()
-        self.gamepanel.random_cell()
-        self.gamepanel.paintGrid()
-        self.gamepanel.window.bind('<Key>', self.link_keys)
-        self.gamepanel.window.mainloop()
-
-    def link_keys(self, event):
-        if self.end or self.won:
-            return
-
-        self.gamepanel.compress = False
-        self.gamepanel.merge = False
-        self.gamepanel.moved = False
-
-        presed_key = event.keysym
-
-        if presed_key == 'Up':
-            self.gamepanel.transpose()
-            self.gamepanel.compressGrid()
-            self.gamepanel.mergeGrid()
-            self.gamepanel.moved = self.gamepanel.compress or self.gamepanel.merge
-            self.gamepanel.compressGrid()
-            self.gamepanel.transpose()
-
-        elif presed_key == 'Down':
-            self.gamepanel.transpose()
-            self.gamepanel.reverse()
-            self.gamepanel.compressGrid()
-            self.gamepanel.mergeGrid()
-            self.gamepanel.moved = self.gamepanel.compress or self.gamepanel.merge
-            self.gamepanel.compressGrid()
-            self.gamepanel.reverse()
-            self.gamepanel.transpose()
-
-        elif presed_key == 'Left':
-            self.gamepanel.compressGrid()
-            self.gamepanel.mergeGrid()
-            self.gamepanel.moved = self.gamepanel.compress or self.gamepanel.merge
-            self.gamepanel.compressGrid()
-
-        elif presed_key == 'Right':
-            self.gamepanel.reverse()
-            self.gamepanel.compressGrid()
-            self.gamepanel.mergeGrid()
-            self.gamepanel.moved = self.gamepanel.compress or self.gamepanel.merge
-            self.gamepanel.compressGrid()
-            self.gamepanel.reverse()
-        else:
-            pass
-
-        self.gamepanel.paintGrid()
-        print(self.gamepanel.score)
-
-        flag = 0
-        for i in range(4):
-            for j in range(4):
-                if (self.gamepanel.gridCell[i][j] == 2048):
-                    flag = 1
-                    break
-
-        if (flag == 1):  # found 2048
-            self.won = True
-            messagebox.showinfo('2048', message='이겼다~~')
-            print("won")
-            return
-
-        for i in range(4):
-            for j in range(4):
-                if self.gamepanel.gridCell[i][j] == 0:
-                    flag = 1
-                    break
-
-        if not (flag or self.gamepanel.can_merge()):
-            self.end = True
-            messagebox.showinfo('2048', 'Game Over!!!')
-            print("Over")
-
-        if self.gamepanel.moved:
-            self.gamepanel.random_cell()
-
-        self.gamepanel.paintGrid()
+    def left(self, event):
+        self.stack()
+        self.combine()
+        self.stack()
+        self.add_new_tile()
+        self.update_GUI()
+        self.game_over()
 
 
-gamepanel = Board()
-game2048 = Game(gamepanel)
-game2048.start()
+    def right(self, event):
+        self.reverse()
+        self.stack()
+        self.combine()
+        self.stack()
+        self.reverse()
+        self.add_new_tile()
+        self.update_GUI()
+        self.game_over()
+
+
+    def up(self, event):
+        self.transpose()
+        self.stack()
+        self.combine()
+        self.stack()
+        self.transpose()
+        self.add_new_tile()
+        self.update_GUI()
+        self.game_over()
+
+
+
+    def down(self, event):
+        self.transpose()
+        self.reverse()
+        self.stack()
+        self.combine()
+        self.stack()
+        self.reverse()
+        self.transpose()
+        self.add_new_tile()
+        self.update_GUI()
+        self.game_over()
+
+if __name__ == "__main__":
+    Game()
