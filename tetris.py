@@ -1,18 +1,25 @@
 from random import randrange as rand
-import pygame, sys
-
+import pygame
+import sys
 from tkinter import messagebox as msg, Tk
+pygame.init()
 
 # 게임 방법 소개
 root = Tk()
 root.withdraw()
 msg.showinfo('게임 방법', '테트리스는 방향키를 사용하여 하는 게임입니다!')
 
+bgm = pygame.mixer.Sound('PyRacing/sound/tetris.ogg')
+# 배경음악 무한 반복
+bgm.play(-1)
+
+
 # The configuration
 cell_size = 25
 cols = 20
 rows = 32
 maxfps = 40
+
 
 colors = [
     (0, 0, 0),
@@ -277,8 +284,7 @@ Press space to continue""" % self.score)
                     self.disp_msg("Next:", (
                         self.rlim + cell_size,
                         2))
-                    self.disp_msg("Score: %d\n\nLevel: %d\
-\nLines: %d" % (self.score, self.level, self.lines),
+                    self.disp_msg("Score: %d\n\nLevel: %d\\nLines: %d" % (self.score, self.level, self.lines),
                                   (self.rlim + cell_size, cell_size * 5))
                     self.draw_matrix(self.bground_grid, (0, 0))
                     self.draw_matrix(self.board, (0, 0))
@@ -295,8 +301,7 @@ Press space to continue""" % self.score)
                     self.quit()
                 elif event.type == pygame.KEYDOWN:
                     for key in key_actions:
-                        if event.key == eval("pygame.K_"
-                                             + key):
+                        if event.key == eval("pygame.K_"+ key):
                             key_actions[key]()
 
             dont_burn_my_cpu.tick(maxfps)
