@@ -16,13 +16,15 @@ music = pygame.mixer.Sound('PyRacing/sound/bg.ogg')
 music.play(-1)
 
 # 창 크기 조절하기
-w = 900   # 창 가로
-h = 900     # 창 세로
-ws = root.winfo_screenwidth()   # 모니터 가로
-hs = root.winfo_screenheight()  # 모니터 세로
+w = 900   # 가로
+h = 900     # 세로
+
+ws = root.winfo_screenwidth()   # 가로
+hs = root.winfo_screenheight()  # 세로
+
 # 모니터 가운데에 위치
-x = (ws/2) - (w/2) - 8      # x좌표 지정
-y = (hs/2) - (h/2) - 31     # y좌표 지정
+x = (ws/2) - (w/2) - 8      # x좌표
+y = (hs/2) - (h/2) - 31     # y좌표
 root.geometry('%dx%d+%d+%d' % (w, h, x, y))     # 창 크기, 위치 지정
 
 btn = tkinter.Button(root, text="press start")     # 버튼 생성
