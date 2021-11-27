@@ -1,12 +1,19 @@
 import tkinter
 import tkinter as tk
 
+import pygame
+pygame.init()
 
 root = tk.Tk()
 root.title("뽀글뽀글 미니게임")
 wall = tkinter.PhotoImage(file="./img/1.gif")     # 배경 이미지
 wall_label = tkinter.Label(image=wall)
 wall_label.place(x=0, y=0)
+
+# 배경음악 지정
+music = pygame.mixer.Sound('PyRacing/sound/bg.ogg')
+# 배경음악 무한 반복
+music.play(-1)
 
 # 창 크기 조절하기
 w = 900   # 창 가로
