@@ -1,194 +1,144 @@
-from pygame.locals import *
-from random import randint
-import time
 import pygame
-
-playing = True
-moveUp = moveDown = moveRight = moveLeft = move_init = False
-
-step = 23
-score = 0
-length = 2
-speed = 75
+import random
+from datetime import datetime
+from datetime import timedelta
+import time
 
 
-x_snake_position = [0]
-y_snake_position = [0]
+def writeScore(count):
+    global screen
+    font = pygame.font.Font(None, 40)
+    text = font.render('Point : ' + str(count), True, (160, 82, 45))
+    screen.blit(text, (20, 20))
 
 
-for i in range(0, 1000):
-    x_snake_position.append(-100)
-    y_snake_position.append(-100)
+def writeMessage(text, count):
+    global screen
+    textfont = pygame.font.Font(None, 60)
+    text = textfont.render(text, True, (255, 0, 0))
+    count = textfont.render(f'{count}', True, (255, 0, 0))
+    textpos = text.get_rect()
+    countpos = count.get_rect()
+    textpos.center = (480 / 2, 640 / 2 - 100)
+    countpos.center = (480 / 2, 640 / 2)
+    screen.blit(text, textpos)
+    screen.blit(count, countpos)
+    pygame.display.update()
 
 
-def collision(x_coordinates_1, y_coordinates_1, x_coordinates_2, y_coordinates_2, size_snake, size_fruit):
-    if ((x_coordinates_1 + size_snake >= x_coordinates_2) or (
-            x_coordinates_1 >= x_coordinates_2)) and x_coordinates_1 <= x_coordinates_2 + size_fruit:
-        if ((y_coordinates_1 >= y_coordinates_2) or (
-                y_coordinates_1 + size_snake >= y_coordinates_2)) and y_coordinates_1 <= y_coordinates_2 + size_fruit:
-            return True
-        return False
+def initGame():
+    global WHITE, RED, GREEN, BLUE, DEEPBLUE, size, screen, done, clock, last_moved_time, KEY_DIRECTION
+    WHITE = (255, 255, 255)
+    RED = (255, 0, 0)
+    GREEN = (126, 218, 89)
+    BLUE = (15, 124, 247)
+    DEEPBLUE = (0, 0, 205)
+    size = [500, 700]  # 화면 크기
+    screen = pygame.display.set_mode(size)
+    pygame.display.set_caption("스네이크 게임")
+    done = False
+    clock = pygame.time.Clock()
+    last_moved_time = datetime.now()
+
+    KEY_DIRECTION = {
+        pygame.K_UP: 'N',
+        pygame.K_DOWN: 'S',
+        pygame.K_LEFT: 'W',
+        pygame.K_RIGHT: 'E',
+    }
 
 
-def disp_score(score):
-    font = pygame.font.SysFont(None, 25)
-    text = font.render("Score: " + str(score), True, (0, 0, 0))
-    window.blit(text, (400, 0))
+def draw_block(screen, color, position):
+    block = pygame.Rect((position[1] * 20, position[0] * 20),
+                        (20, 20))
+    pygame.draw.rect(screen, color, block)
 
 
-pygame.init()
+class Snake:
+    def __init__(self):
+        self.positions = [(0, 2), (0, 1), (0, 0)]  # 뱀의 위치
+        self.direction = ''
 
-# gui 이름
+    def draw(self):
+        for position in self.positions:
+            draw_block(screen, BLUE, position)
 
-window = pygame.display.set_mode((500, 500))
-window_rect = window.get_rect()
-pygame.display.set_caption("Snake game")
+    def move(self):
+        head_position = self.positions[0]
+        y, x = head_position
+        if self.direction == 'N':
+            self.positions = [(y - 1, x)] + self.positions[:-1]
+        elif self.direction == 'S':
+            self.positions = [(y + 1, x)] + self.positions[:-1]
+        elif self.direction == 'W':
+            self.positions = [(y, x - 1)] + self.positions[:-1]
+        elif self.direction == 'E':
+            self.positions = [(y, x + 1)] + self.positions[:-1]
 
-# 창 크기
-
-cover = pygame.Surface(window.get_size())
-cover = cover.convert()
-cover.fill((250, 250, 250))
-window.blit(cover, (0, 0))
-
-
-
-pygame.display.flip()
-
-# 기본 이미지 설정
-head = pygame.image.load("img/img/head.png").convert_alpha()  # The head
-head = pygame.transform.scale(head, (35, 35))
-
-body_part_1 = pygame.image.load("img/img/body.png").convert_alpha()  # The body
-body_part_1 = pygame.transform.scale(body_part_1, (25, 25))
-
-fruit = pygame.image.load("img/img/strawberry.png").convert_alpha()  # The fruit
-fruit = pygame.transform.scale(fruit, (35, 35))
-
-
-position_1 = head.get_rect()
-position_fruit = fruit.get_rect()
-
-
-
-x_snake_position[0] = position_1.x
-y_snake_position[0] = position_1.y
-
-# 과일 위치
-
-position_fruit.x = randint(2, 10) * step
-position_fruit.y = randint(2, 10) * step
-# Main loop for the game
-
-while (playing == True):
+    def grow(self):
+        tail_position = self.positions[-1]
+        y, x = tail_position
+        if self.direction == 'N':
+            self.positions.append((y - 1, x))
+        elif self.direction == 'S':
+            self.positions.append((y + 1, x))
+        elif self.direction == 'W':
+            self.positions.append((y, x - 1))
+        elif self.direction == 'C':
+            self.positions.append((y, x + 1))
 
 
+class Apple:
+    def __init__(self, position=(5, 5)):
+        self.position = position
 
-    for event in pygame.event.get():
+    def draw(self):
+        draw_block(screen, RED, self.position)
 
 
-        if event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE):
-            playing = False
+# 4. pygame 무한루프
+def runGame():
+    global BLACK, RED, GREEN, BLUE, DEEPBLUE, size, screen, done, clock, last_moved_time, KEY_DIRECTION
+    pygame.init()
+    # 게임 시작 시, 뱀과 사과를 초기화
+    snake = Snake()
+    apple = Apple()
 
+    count = 0
 
+    while not done:
+        clock.tick(10)
+        screen.fill(GREEN)  # 배경 색
 
-        if event.type == pygame.KEYDOWN:
+        snake.draw()
+        apple.draw()
+        # score_str = str(count).zfill(6)
+        # score_image = large_font.render(score_str,True, (0, 255, 0))
+        # screen.blit(score_image, (350, 30))
 
-            if event.key == pygame.K_UP:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                done = True
+            if event.type == pygame.KEYDOWN:
+                if event.key in KEY_DIRECTION:
+                    snake.direction = KEY_DIRECTION[event.key]
 
-                if moveUp == False and move_init == True:  # Vérification que la direction soit différente et annonce que les déplacement on débutés
-                    if moveDown == True:  # Empêchement d'aller dans la direction opposée
-                        moveUp == False
+        writeScore(count)
 
-                    else:
+        if timedelta(seconds=0.1) <= datetime.now() - last_moved_time:
+            snake.move()
+            last_moved_time = datetime.now()
 
-                        moveDown = moveRight = moveLeft = False  # Changement de la variable de déplacement
-                        moveUp = move_init = True
+        if snake.positions[0] == apple.position:
+            snake.grow()
+            count += 1
+            apple.position = (random.randint(0, 19), random.randint(0, 19))
 
-            if event.key == pygame.K_DOWN:
+        if snake.positions[0] in snake.positions[1:]:
+            done = True
+            writeMessage('GAME OVER', count)
+            time.sleep(3)
 
-                if moveDown == False:  # Empêchement d'aller dans la direction opposée
-                    if moveUp == True:
-                        moveDown == False
-                    else:
-                        moveRight = moveLeft = moveUp = False
-                        moveDown = move_init = True
+        pygame.display.update()
 
-            if event.key == pygame.K_RIGHT:
-
-                if moveRight == False:
-                    if moveLeft == True:
-                        moveRight == False
-                    else:
-                        moveLeft = moveUp = moveDown = False
-                        moveRight = move_init = True
-            if event.key == pygame.K_LEFT:
-                if moveLeft == False:
-                    if moveRight == True:
-                        moveLeft == False
-                    else:
-                        moveRight = moveDown = moveUp = False
-                        moveLeft = move_init = True
-
-    window.blit(body_part_1, (-5, 5))
-    window.blit(head, (0, 0))
-
-    for i in range(length - 1, 0, -1):
-        x_snake_position[i] = x_snake_position[(i - 1)]
-        y_snake_position[i] = y_snake_position[(i - 1)]
-    cover.fill((250, 250, 250))
-    for i in range(1, length):
-        cover.blit(body_part_1, (x_snake_position[i], y_snake_position[i]))
-
-    if moveUp:
-        y_snake_position[0] = y_snake_position[0] - step
-        window.blit(cover, (0, 0))
-        window.blit(head, (x_snake_position[0], y_snake_position[0]))
-    if moveDown:
-        y_snake_position[0] = y_snake_position[0] + step
-        window.blit(cover, (0, 0))
-        window.blit(head, (x_snake_position[0], y_snake_position[0]))
-    if moveRight:
-        x_snake_position[0] = x_snake_position[0] + step
-        window.blit(cover, (0, 0))
-        window.blit(head, (x_snake_position[0], y_snake_position[0]))
-    if moveLeft:
-        x_snake_position[0] = x_snake_position[0] - step
-        window.blit(cover, (0, 0))
-        window.blit(head, (x_snake_position[0], y_snake_position[0]))
-    if x_snake_position[0] < window_rect.left:
-        playing = False
-    if x_snake_position[0] + 35 > window_rect.right:
-        playing = False
-    if y_snake_position[0] < window_rect.top:
-        playing = False
-    if y_snake_position[0] + 35 > window_rect.bottom:
-        playing = False
-    if collision(x_snake_position[0], y_snake_position[0], x_snake_position[i], y_snake_position[i], 0, 0) and (
-            move_init == True):
-        playing = False
-
-    window.blit(fruit, position_fruit)
-
-    if collision(x_snake_position[0], y_snake_position[0], position_fruit.x, position_fruit.y, 35, 25):
-
-        position_fruit.x = randint(1, 20) * step
-        position_fruit.y = randint(1, 20) * step
-
-        for j in range(0, length):
-
-            while collision(position_fruit.x, position_fruit.y, x_snake_position[j], y_snake_position[j], 35, 25):
-                position_fruit.x = randint(1, 20) * step
-                position_fruit.y = randint(1, 20) * step
-
-        length = length + 1
-        score = score + 1
-
-    disp_score(score)
-
-    pygame.display.flip()
-
-    time.sleep(speed / 1000)
-
-pygame.quit()
-exit()
+    pygame.quit()
