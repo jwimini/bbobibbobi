@@ -3,7 +3,7 @@
 📍 테트리스 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 📍 2048 
 📍 운석 피하기 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;  📍 스네이크
 
-- - - - - - - - -  🎮게임 방법🎮 - - - - - - - - - - <p>
+- - - - - - - - -  🎮게임 방법🎮 - - - - - - - - - - <br>
 📍 테트리스 
 - 방향키로 블럭의 위치를 움직일수 있고 스페이스바를 눌러 블럭의 모양을 바꿀수 있다.
 - 한줄을 없앨때 마다 점수를 얻을수 있다.
