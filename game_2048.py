@@ -119,13 +119,13 @@ class Game(tk.Frame):
 
     def get_score(self):
         self.score = []
-        if os.path.exists("score.txt"):
-            with open("score.txt", "rt", encoding='utf-8') as f:
-                while f.readline():
-                    self.score.append(int(f.readline()))
-                    break
+        # if os.path.exists("score.txt"):
+        with open("score.txt", "rt", encoding='utf-8') as f:
+            while f.readline():
+                self.score.append(int(f.readline()))
+                break
         print(self.score)
-        messagebox.showinfo('점수 보여주기',self.score)
+        messagebox.showinfo('점수',self.score)
 
     def create_button(self):
         button = tk.Button(self, text='New Game', command=lambda: self.new_game())
