@@ -1,9 +1,11 @@
+import os
 import sys
 from math import sqrt
 from random import randint
 import pygame
 from pygame.locals import QUIT, KEYDOWN, K_LEFT, K_RIGHT, K_DOWN, K_SPACE
 import time
+
 # from tkinter import messagebox as msg, Tk
 
 
@@ -98,8 +100,10 @@ BLOCK_DATA = (
     )
 )
 
+
 class Block:
     """ 블록 객체 """
+
     def __init__(self, count):
         self.turn = randint(0, 3)
         self.type = BLOCK_DATA[randint(0, 6)]
@@ -109,8 +113,6 @@ class Block:
         self.ypos = 1 - self.size
         self.fire = count + INTERVAL
 
-
-
     def update(self, count):
         """ 블록 상태 갱신 (소거한 단의 수를 반환한다) """
         # 아래로 총돌?
@@ -118,13 +120,13 @@ class Block:
         if is_overlapped(self.xpos, self.ypos + 1, self.turn):
             for y_offset in range(BLOCK.size):
                 for x_offset in range(BLOCK.size):
-                    if 0 <= self.xpos+x_offset < WIDTH and \
-                        0 <= self.ypos+y_offset < HEIGHT:
-                        val = BLOCK.data[y_offset*BLOCK.size \
-                                            + x_offset]
+                    if 0 <= self.xpos + x_offset < WIDTH and \
+                            0 <= self.ypos + y_offset < HEIGHT:
+                        val = BLOCK.data[y_offset * BLOCK.size \
+                                         + x_offset]
                         if val != 0:
-                            FIELD[self.ypos+y_offset]\
-                                 [self.xpos+x_offset] = val
+                            FIELD[self.ypos + y_offset] \
+                                [self.xpos + x_offset] = val
 
             erased = erase_line()
             go_next_block(count)
@@ -142,16 +144,17 @@ class Block:
             ypos = index // self.size
             val = self.data[index]
             if 0 <= ypos + self.ypos < HEIGHT and \
-               0 <= xpos + self.xpos < WIDTH and val != 0:
+                    0 <= xpos + self.xpos < WIDTH and val != 0:
                 x_pos = 25 + (xpos + self.xpos) * 25
                 y_pos = 25 + (ypos + self.ypos) * 25
                 pygame.draw.rect(SURFACE, COLORS[val],
                                  (x_pos, y_pos, 24, 24))
 
+
 def writeScore(count):
     global SURFACE
     font = pygame.font.Font(None, 40)
-    text = font.render(count, True, (255, 255, 0))
+    text = font.render(count, True, (153, 204, 153))
     SURFACE.blit(text, (360, 30))
 
 
@@ -159,8 +162,8 @@ def writeScore(count):
 def writeMessage(text, count):
     global SURFACE
     textfont = pygame.font.Font(None, 60)
-    text = textfont.render(text, True, (255, 0, 0))
-    count = textfont.render(f'{count}점', True, (255, 0, 0))
+    text = textfont.render(text, True, (255, 21, 0))
+    count = textfont.render(f'{count}', True, (255, 21, 0))
     textpos = text.get_rect()
     countpos = count.get_rect()
     textpos.center = (480 / 2, 640 / 2 - 100)
@@ -168,6 +171,7 @@ def writeMessage(text, count):
     SURFACE.blit(text, textpos)
     SURFACE.blit(count, countpos)
     pygame.display.update()
+
 
 def erase_line():
     """ 행이 모두 찬 단을 지운다 """
@@ -182,13 +186,15 @@ def erase_line():
             ypos -= 1
     return erased
 
+
 def is_game_over():
     """ 게임 오버인지 아닌지 """
     filled = 0
     for cell in FIELD[0]:
         if cell != 0:
             filled += 1
-    return filled > 2   # 2 = 좌우의 벽
+    return filled > 2  # 2 = 좌우의 벽
+
 
 def go_next_block(count):
     """ 다음 블록으로 전환한다 """
@@ -196,17 +202,17 @@ def go_next_block(count):
     BLOCK = NEXT_BLOCK if NEXT_BLOCK != None else Block(count)
     NEXT_BLOCK = Block(count)
 
+
 def is_overlapped(xpos, ypos, turn):
-    """ 블록이 벽이나 땅의 블록과 충돌하는지 아닌지 """
+    # 블록이 벽이나 땅의 블록과 충돌하는지 아닌지
     data = BLOCK.type[turn]
     for y_offset in range(BLOCK.size):
         for x_offset in range(BLOCK.size):
-            if 0 <= xpos+x_offset < WIDTH and \
-                0 <= ypos+y_offset < HEIGHT:
-                if data[y_offset*BLOCK.size + x_offset] != 0 and \
-                    FIELD[ypos+y_offset][xpos+x_offset] != 0:
+            if 0 <= xpos + x_offset < WIDTH and 0 <= ypos + y_offset < HEIGHT:
+                if data[y_offset * BLOCK.size + x_offset] != 0 and FIELD[ypos + y_offset][xpos + x_offset] != 0:
                     return True
     return False
+
 
 def main():
     """ 메인 루틴 """
@@ -220,7 +226,9 @@ def main():
     HEIGHT = 22
     INTERVAL = 40
     FIELD = [[0 for _ in range(WIDTH)] for _ in range(HEIGHT)]
-    COLORS = ((0, 0, 0), (255, 165, 0), (0, 0, 255), (0, 255, 255), (0, 255, 0), (255, 0, 255), (255, 255, 0), (255, 0, 0), (128, 128, 128))
+    COLORS = (
+    (0, 0, 0), (255, 165, 0), (0, 0, 255), (0, 255, 255), (0, 255, 0), (255, 0, 255), (255, 255, 0), (255, 21, 0),
+    (255, 153, 153))
     BLOCK = None
     NEXT_BLOCK = None
     count = 0
@@ -233,7 +241,7 @@ def main():
         for xpos in range(WIDTH):
             FIELD[ypos][xpos] = 8 if xpos == 0 or xpos == WIDTH - 1 else 0
     for index in range(WIDTH):
-        FIELD[HEIGHT-1][index] = 8
+        FIELD[HEIGHT - 1][index] = 8
 
     while not game_over:
         key = None
@@ -273,20 +281,20 @@ def main():
                 BLOCK.data = BLOCK.type[BLOCK.turn]
 
         # 전체&낙하 중인 블록 그리기
-        SURFACE.fill((0, 0, 0))
+        SURFACE.fill((0, 0, 51))
         for ypos in range(HEIGHT):
             for xpos in range(WIDTH):
                 val = FIELD[ypos][xpos]
                 pygame.draw.rect(SURFACE, COLORS[val],
-                                 (xpos*25 + 25, ypos*25 + 25, 24, 24))
+                                 (xpos * 25 + 25, ypos * 25 + 25, 24, 24))
         BLOCK.draw()
 
         # 다음 블록 그리기
         for ypos in range(NEXT_BLOCK.size):
             for xpos in range(NEXT_BLOCK.size):
-                val = NEXT_BLOCK.data[xpos + ypos*NEXT_BLOCK.size]
+                val = NEXT_BLOCK.data[xpos + ypos * NEXT_BLOCK.size]
                 pygame.draw.rect(SURFACE, COLORS[val],
-                                 (xpos*25 + 350, ypos*25 + 100, 24, 24))
+                                 (xpos * 25 + 350, ypos * 25 + 100, 24, 24))
 
         # 점수 나타내기
         score_str = str(score).zfill(6)
@@ -296,10 +304,8 @@ def main():
             writeMessage('GAME OVER', score)
             time.sleep(3)
 
-
         pygame.display.update()
 
         FPSCLOCK.tick(15)
-
 
     pygame.quit()
