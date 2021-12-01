@@ -49,7 +49,7 @@ wall_label.place(x=0, y=0)
 # 배경음악 지정
 music = pygame.mixer.Sound('img_/sound/bg.ogg')
 # 배경음악 무한 반복
-music.play(loops=0)
+music.play(-1)
 
 
     # 창 크기 조절하기
