@@ -2,12 +2,9 @@ import sys
 import tkinter
 import pygame
 
-# import avoid
-# import avoid
 import game_2048
 import snake
 import tetris
-# from category import Category
 pygame.init()
 
 main = tkinter.Tk()
@@ -16,11 +13,11 @@ main.title("뽀글뽀글 미니게임")
 def tetrisGame():
     tetris.main()
 
-# def brickgame():
-#     brickgame.runbrick()
-
 def game2048():
     game_2048.Game()
+
+# def memory():
+#     memory.display_start_screen()
 
 def snakegame():
     snake.initGame()
@@ -38,8 +35,8 @@ def move_category():
     btn3.place(x=250, y=470, width=120, height=40)
     btn4 = tkinter.Button(main, text='스네이크', command =snakegame)
     btn4.place(x=550, y=470, width=120, height=40)
-    btn5 = tkinter.Button(main, text='최고기록 보기')
-    btn5.place(x=390, y=580, width=120, height=40)
+    # btn5 = tkinter.Button(main, text='최고기록 보기')
+    # btn5.place(x=390, y=580, width=120, height=40)
     main.mainloop()
 
 
